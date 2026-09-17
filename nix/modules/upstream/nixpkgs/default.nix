@@ -40,7 +40,10 @@
     # to inform users that they need to be enabled in the host system?
     {
       boot = lib.mkOption {
-        type = lib.types.anything;
+        default = {};
+        type = lib.types.submodule {
+          freeformType = lib.types.attrsOf lib.types.anything;
+        };
       };
 
       # nixos/modules/services/system/userborn.nix still depends on activation scripts
