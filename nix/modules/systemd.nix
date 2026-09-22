@@ -171,6 +171,12 @@ in
         '';
       };
     };
+
+    # Stub since Debian & Ubuntu include everything
+    additionalUpstreamUserUnits = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+    };
   };
 
   config = {
