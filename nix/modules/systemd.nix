@@ -173,7 +173,7 @@ in
     };
 
     # Stub since Debian & Ubuntu include everything
-    additionalUpstreamUserUnits = lib.mkOption {
+    additionalUpstreamSystemUnits = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
     };
