@@ -36,12 +36,6 @@ in
       internal = true;
     };
 
-    systemd.user.services = lib.mkOption {
-      type = lib.types.attrs;
-      default = { };
-      internal = true;
-    };
-
     programs.ssh = {
       enable = lib.mkOption {
         type = lib.types.bool;
