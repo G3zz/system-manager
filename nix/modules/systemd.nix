@@ -229,6 +229,10 @@ in
     environment.etc =
       let
         enabledUnits = lib.filterAttrs (_: unit: unit.enable) cfg.units;
+        dropinMapName = "asDropinMap";
+        dropinUnits = lib.filterAttrs (_: v: (v.overrideStrategy or "") == "asDropin") enabledUnits;
+        dropinMapAttrs = lib.mapAttrs (_: _: "1") dropinUnits;
+
         # The `aliases` option is part of the nixpkgs systemd unit schema and
         # but system-manager does not implement it: we cannot emit
         # sibling-relative alias symlinks safely because the activator
@@ -265,9 +269,11 @@ in
                 done
               done
 
+              # Emit Nix-defined units (respecting overrideStrategy)
+              ${lib.toShellVar dropinMapName dropinMapAttrs}
               for i in ${toString (lib.mapAttrsToList (n: v: v.unit) enabledUnits)}; do
                 fn=$(basename $i/*)
-                if [ -e $out/$fn ]; then
+                if [ -e $out/$fn ] || [ -n "''${${dropinMapName}[$fn]:-}" ]; then
                   if [ "$(readlink -f $i/$fn)" = /dev/null ]; then
                     ln -sfn /dev/null $out/$fn
                   else
@@ -279,6 +285,7 @@ in
                 fi
               done
 
+              # create .wants symlinks
               ${lib.concatStrings (
                 lib.mapAttrsToList (
                   name: unit:
@@ -289,6 +296,7 @@ in
                 ) enabledUnits
               )}
 
+              # create .requires symlinks
               ${lib.concatStrings (
                 lib.mapAttrsToList (
                   name: unit:
