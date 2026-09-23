@@ -228,6 +228,27 @@ in
 
     environment.etc =
       let
+        # generate contents for /etc/systemd/${dir} from attrset of links and packages
+        hooks = with utils;
+          dir: links:
+          pkgs.runCommand "${dir}"
+            {
+              preferLocalBuild = true;
+              packages = cfg.packages;
+            }
+            ''
+              set -e
+              mkdir -p $out
+              for package in $packages
+              do
+                for hook in $package/lib/systemd/${dir}/*
+                do
+                  ln -s $hook $out/
+                done
+              done
+              ${concatStrings (mapAttrsToList (exec: target: "ln -s ${target} $out/${exec};\n") links)}
+            '';
+
         enabledUnits = lib.filterAttrs (_: unit: unit.enable) cfg.units;
         dropinMapName = "asDropinMap";
         dropinUnits = lib.filterAttrs (_: v: (v.overrideStrategy or "") == "asDropin") enabledUnits;
@@ -307,6 +328,12 @@ in
                 ) enabledUnits
               )}
             '';
+        "systemd/user-generators" = {
+          source = hooks "user-generators" cfg.user.generators;
+        };
+        "systemd/system-generators" = {
+          source = hooks "system-generators" cfg.generators;
+        };
       };
   };
 }
