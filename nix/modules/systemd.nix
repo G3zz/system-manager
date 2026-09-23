@@ -10,6 +10,7 @@ let
   cfg = config.systemd;
 
   inherit (utils) systemdUtils;
+  inherit (lib) concatStrings mapAttrsToList;
   systemd-lib = utils.systemdUtils.lib;
 
   substituteTarget =
@@ -229,7 +230,7 @@ in
     environment.etc =
       let
         # generate contents for /etc/systemd/${dir} from attrset of links and packages
-        hooks = with utils;
+        hooks =
           dir: links:
           pkgs.runCommand "${dir}"
             {
