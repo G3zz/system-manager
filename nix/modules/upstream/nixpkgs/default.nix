@@ -31,8 +31,6 @@
       "/config/nix.nix"
       "/services/system/userborn.nix"
       "/system/build.nix"
-      "/services/misc/nix-gc.nix"
-      "/services/misc/nix-optimise.nix"
     ];
 
   options =
