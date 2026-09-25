@@ -395,6 +395,20 @@ in
         '';
       };
 
+      generateHostKeys = lib.mkOption {
+        type = lib.types.bool;
+        default = config.services.openssh.enable;
+        defaultText = lib.literalExpression "services.openssh.enable";
+        description = ''
+          Whether to generate SSH host keys.
+
+          This can be enabled explicitly if you want to generate host keys but
+          don't want to enable the SSH daemon.
+        '';
+        example = true;
+      };
+
+
       authorizedKeysFiles = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [ ];
@@ -852,6 +866,36 @@ in
           message = "addr must be specified in each listenAddresses entry";
         }
       );
+    })
+
+    (lib.mkIf cfg.generateHostKeys {
+      systemd.services.sshd-keygen = {
+        description = "SSH Host Keys Generation";
+        wantedBy = [ "multi-user.target" ];
+        unitConfig = {
+          ConditionFileNotEmpty = map (k: "|!${k.path}") cfg.hostKeys;
+        };
+        serviceConfig = {
+          Type = "oneshot";
+        };
+        path = [ cfg.package ];
+        script = lib.flip lib.concatMapStrings cfg.hostKeys (k: ''
+          if ! [ -s "${k.path}" ]; then
+              if ! [ -h "${k.path}" ]; then
+                  rm -f "${k.path}"
+              fi
+              mkdir -p "$(dirname '${k.path}')"
+              chmod 0755 "$(dirname '${k.path}')"
+              ssh-keygen \
+                -t "${k.type}" \
+                ${lib.optionalString (k ? bits) "-b ${toString k.bits}"} \
+                ${lib.optionalString (k ? comment) "-C '${k.comment}'"} \
+                ${lib.optionalString (k ? openSSHFormat && k.openSSHFormat) "-o"} \
+                -f "${k.path}" \
+                -N ""
+          fi
+        '');
+      };
     })
   ];
 }
